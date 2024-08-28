@@ -15,14 +15,14 @@ def generate_launch_description():
 
         Node(
             name='no_simples',
-            package='pacote_alexandre',
+            package='pacote1_alexandre',
             executable='no_exemplo_1',
             arguments=['--ros-args', '--log-level', LaunchConfiguration('log_level')]
         ),
 
         Node(
             name='no_simples2',
-            package='pacote_alexandre',
+            package='pacote1_alexandre',
             executable='no_exemplo_2',
             arguments=['--ros-args', '--log-level', LaunchConfiguration('log_level')]
         ),
