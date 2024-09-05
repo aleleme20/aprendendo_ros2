@@ -7,6 +7,8 @@ from geometry_msgs.msg import Twist, Vector3
 
 from rclpy.qos import QoSProfile, QoSReliabilityPolicy
 
+import numpy
+
 class R2D2(Node):
 
     def __init__(self):
@@ -44,20 +46,49 @@ class R2D2(Node):
         self.get_logger().info ('Ordenando o robô: "ir para a frente"')
         self.pub_cmd_vel.publish(self.ir_para_frente)
         rclpy.spin_once(self)
+        
+        error = 0
+        integral = 0
+        dif_erro = 0
+        old_error = 0
+        distancia_objetivo = 2
+        p_gain = 0.01 # valores iniciais
+        i_gain = 0.00 # que precisam
+        d_gain = 0.01 # ser ajustados
+        
+
 
         self.get_logger().info ('Entrando no loop princial do nó.')
         while(rclpy.ok):
             rclpy.spin_once(self)
 
+            distancia_direita = numpy.array(self.laser[0:10]).mean()
+            distancia_frente = numpy.array(self.laser[0:10]).mean()
             self.get_logger().debug ('Atualizando as distancias lidas pelo laser.')
             self.distancia_direita   = min((self.laser[  0: 80])) # -90 a -10 graus
             self.distancia_frente    = min((self.laser[ 80:100])) # -10 a  10 graus
             self.distancia_esquerda  = min((self.laser[100:180])) #  10 a  90 graus
+       
+            error = distancia_objetivo - distancia_direita
+            integral = integral + error
+            dif_erro = error - old_error
+            old_error = error
+              
+            power = p_gain*error + i_gain*integral + d_gain*dif_erro
+
+            cmd = Twist()
+            cmd.linear.x = 0.5
+            cmd.angular.z = power
+            self.pub_cmd_vel.publish(cmd)
+
 
             self.get_logger().debug ("Distância para o obstáculo" + str(self.distancia_frente))
             if(self.distancia_frente < 1.5):
                 self.get_logger().info ('Obstáculo detectado.')
                 break
+            
+            #fazer a lógica do codigo aqui:
+            #if()
 
         self.get_logger().info ('Ordenando o robô: "parar"')
         self.pub_cmd_vel.publish(self.parar)
