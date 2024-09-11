@@ -7,7 +7,10 @@ from geometry_msgs.msg import Twist, Vector3
 
 from rclpy.qos import QoSProfile, QoSReliabilityPolicy
 
+from math import *
+
 import numpy
+
 
 class R2D2(Node):
 
@@ -27,6 +30,8 @@ class R2D2(Node):
 
         self.get_logger().debug ('Definindo o publisher de controle do robo: "/cmd_Vel"')
         self.pub_cmd_vel = self.create_publisher(Twist, '/cmd_vel', 10)
+
+        self.estado_robo = 0
 
     def listener_callback_laser(self, msg):
         self.laser = msg.ranges
@@ -52,44 +57,49 @@ class R2D2(Node):
         dif_erro = 0
         old_error = 0
         distancia_objetivo = 2
-        p_gain = 0.01 # valores iniciais
-        i_gain = 0.00 # que precisam
-        d_gain = 0.01 # ser ajustados
+        p_gain = 5.00 # valor ajustado
+        i_gain = 0.00 
+        d_gain = 0.01 
         
-
 
         self.get_logger().info ('Entrando no loop princial do nó.')
         while(rclpy.ok):
+            
             rclpy.spin_once(self)
 
             distancia_direita = numpy.array(self.laser[0:10]).mean()
-            distancia_frente = numpy.array(self.laser[0:10]).mean()
             self.get_logger().debug ('Atualizando as distancias lidas pelo laser.')
             self.distancia_direita   = min((self.laser[  0: 80])) # -90 a -10 graus
             self.distancia_frente    = min((self.laser[ 80:100])) # -10 a  10 graus
             self.distancia_esquerda  = min((self.laser[100:180])) #  10 a  90 graus
-       
-            error = distancia_objetivo - distancia_direita
-            integral = integral + error
-            dif_erro = error - old_error
-            old_error = error
-              
-            power = p_gain*error + i_gain*integral + d_gain*dif_erro
 
             cmd = Twist()
-            cmd.linear.x = 0.5
-            cmd.angular.z = power
-            self.pub_cmd_vel.publish(cmd)
+
+            if(self.estado_robo == 0):
+        
+                error = distancia_objetivo - distancia_direita
+                integral = integral + error
+                dif_erro = error - old_error
+                old_error = error
+                
+                power = p_gain*error + i_gain*integral + d_gain*dif_erro
+
+                cmd.linear.x = 0.5
+                cmd.angular.z = power
+                self.pub_cmd_vel.publish(cmd)
 
 
-            self.get_logger().debug ("Distância para o obstáculo" + str(self.distancia_frente))
-            if(self.distancia_frente < 1.5):
-                self.get_logger().info ('Obstáculo detectado.')
-                break
+                self.get_logger().debug ("Distância para o obstáculo" + str(self.distancia_frente))
+                if(self.distancia_frente < distancia_objetivo):
+                    self.get_logger().info ('Obstáculo detectado.')
+                    self.estado_robo = 1
+
+            elif(self.estado_robo == 1):
+                cmd.angular.z = pi/2
+                self.pub_cmd_vel.publish(cmd)
+                if(self.distancia_frente > 15): #(d = 20 - 2 - 2 = 16)
+                    self.estado_robo = 0
             
-            #fazer a lógica do codigo aqui:
-            #if()
-
         self.get_logger().info ('Ordenando o robô: "parar"')
         self.pub_cmd_vel.publish(self.parar)
         rclpy.spin_once(self)
