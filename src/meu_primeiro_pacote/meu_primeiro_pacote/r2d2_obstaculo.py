@@ -8,8 +8,8 @@ from geometry_msgs.msg import Twist, Vector3
 
 from rclpy.qos import QoSProfile, QoSReliabilityPolicy
 
+import math
 from math import *
-
 import numpy
 import time 
 
@@ -34,6 +34,7 @@ class R2D2(Node):
 
         self.estado_robo = 0
         self.wait(0.5)
+        self.d = 0.0
 
     def wait(self, max_seconds):
         start = time.time()
@@ -47,6 +48,12 @@ class R2D2(Node):
        
     def listener_callback_odom(self, msg):
         self.pose = msg.pose.pose
+
+    def distancia_robo_objetivo(self): #função que calcula a distância e o robô e o (9,9)
+        obj = [9,9]
+        p_robo = [self.pose.position.x, self.pose.position.y]
+        self.d = math.dist(obj, p_robo) #distância
+        
         
 
     def run(self):
@@ -66,16 +73,14 @@ class R2D2(Node):
 
         self.get_logger().info ('Entrando no loop princial do nó.')
         while(rclpy.ok):
-            try:
-                self.pose.orientation #orientation
-                self.pose.position #posicao
-                _, _, yaw = tf_transformations.euler_from_quaternion([self.pose.orientation.x, self.pose.orientation.y, self.pose.orientation.z, self.pose.orientation.w]) #aqui so precisa usar o yaw
-            except:
-                pass
+            
+            self.pose.orientation #orientation
+            self.pose.position #posicao
+            _, _, yaw = tf_transformations.euler_from_quaternion([self.pose.orientation.x, self.pose.orientation.y, self.pose.orientation.z, self.pose.orientation.w]) #aqui so precisa usar o yaw
+
             rclpy.spin_once(self)
 
-
-            distancia_direita = numpy.array(self.laser[0:10]).mean()
+            #distancia_direita = numpy.array(self.laser[0:10]).mean()
             self.get_logger().debug ('Atualizando as distancias lidas pelo laser.')
             self.distancia_direita   = min((self.laser[  0: 80])) # -90 a -10 graus
             self.distancia_frente    = min((self.laser[ 80:100])) # -10 a  10 graus
@@ -91,31 +96,33 @@ class R2D2(Node):
                 self.get_logger().info ("VIRANDO")
 
                 if(yaw >= pi/4):
-                    self.estado_robo = 1 #estado 1 = para de virar
+                    cmd.angular.z = 0.00
+                    self.pub_cmd_vel.publish(cmd)
+                    self.estado_robo = 1 #estado 1 = andar para de frente
                     self.get_logger().info ("PAROU DE VIRAR")
 
             elif(self.estado_robo == 1):
-                #cmd.linear.x = 0.00
-                cmd.angular.z = 0.00
-                self.pub_cmd_vel.publish(cmd)
-
-                if(self.distancia_direita > self.distancia_esquerda and self.distancia_direita > self.distancia_frente):
-                    self.estado_robo = 2 #estado 2 = vira para a direita
-                    self.get_logger().info ("VIRANDO PARA A DIREITA")
+                if (self.distancia_frente >= self.d):
+                    cmd.linear.x = 0.5
+                    self.pub_cmd_vel.publish(cmd)
+                    self.get_logger().info ("INDO PARA FRENTE")
+                    if(self.d == 0):
+                        cmd.linear.x = 0.0
+                        self.pub_cmd_vel.publish(cmd)
+                        self.get_logger().info ("OBJETIVO ALCANCADO")
+                else:
+                    self.estado_robo = 2
             
             elif(self.estado_robo == 2):
                 cmd.angular.z = 0.1
-
+                self.pub_cmd_vel.publish(cmd)
                 if(self.distancia_frente > self.distancia_direita and self.distancia_frente > self.distancia_esquerda):
-                    self.estado_robo = 3 #estado 3 = parar de virar para a direita
-                    self.get_logger().info ("PAROU DE VIRAR PARA A DIREITA")
-
-            elif(self.estado.robo == 3):
+                    cmd.angular.z = 0.0
+                    self.pub_cmd_vel.publish(cmd)
 
 
 
-
-                self.get_logger().debug ("Distância para o obstáculo" + str(self.distancia_frente))
+            self.get_logger().debug ("Distância para o obstáculo" + str(self.distancia_frente))
                 
                   
         self.get_logger().info ('Ordenando o robô: "parar"')
