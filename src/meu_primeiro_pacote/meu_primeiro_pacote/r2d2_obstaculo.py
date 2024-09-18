@@ -49,20 +49,19 @@ class R2D2(Node):
     def listener_callback_odom(self, msg):
         self.pose = msg.pose.pose
 
-    def distancia_robo_objetivo(self): #função que calcula a distância e o robô e o (9,9)
+    def distancia_robo_obj(self): #função que calcula a distância e o robô e o (9,9)
         obj = [9,9]
-        p_robo = [self.pose.position.x, self.pose.position.y]
-        self.d = math.dist(obj, p_robo) #distância
+        self.dist = math.dist((self.pose.position.x, self.pose.position.y), obj)
+        self.angulo_robo = math.atan2(9 - self.pose.position.x, 9 - self.pose.position.y)
         
         
-
     def run(self):
 
        
         self.get_logger().debug ('Executando uma iteração do loop de processamento de mensagens.')
         rclpy.spin_once(self)
 
-        self.get_logger().debug ('Definindo mensagens de controde do robô.')
+        self.get_logger().debug ('Definindo mensagens de controle do robô.')
         self.ir_para_frente = Twist(linear=Vector3(x= 0.5,y=0.0,z=0.0),angular=Vector3(x=0.0,y=0.0,z= 0.0))
         self.parar          = Twist(linear=Vector3(x= 0.0,y=0.0,z=0.0),angular=Vector3(x=0.0,y=0.0,z= 0.0))
 
@@ -73,56 +72,74 @@ class R2D2(Node):
 
         self.get_logger().info ('Entrando no loop princial do nó.')
         while(rclpy.ok):
-            
-            self.pose.orientation #orientation
-            self.pose.position #posicao
-            _, _, yaw = tf_transformations.euler_from_quaternion([self.pose.orientation.x, self.pose.orientation.y, self.pose.orientation.z, self.pose.orientation.w]) #aqui so precisa usar o yaw
-
+               
+            #self.pose.orientation #orientation
+            #self.pose.position #posicao
+            _, _, yaw = tf_transformations.euler_from_quaternion([self.pose.orientation.x, self.pose.orientation.y, self.pose.orientation.z, self.pose.orientation.w])
+        
             rclpy.spin_once(self)
 
-            #distancia_direita = numpy.array(self.laser[0:10]).mean()
             self.get_logger().debug ('Atualizando as distancias lidas pelo laser.')
             self.distancia_direita   = min((self.laser[  0: 80])) # -90 a -10 graus
             self.distancia_frente    = min((self.laser[ 80:100])) # -10 a  10 graus
             self.distancia_esquerda  = min((self.laser[100:180])) #  10 a  90 graus
-
-            cmd = Twist()
-
-            if(self.estado_robo == 0): #estado 0 = virar orientação para (9,9)
-        
-                #cmd.linear.x = 0.00
-                cmd.angular.z = 0.5
-                self.pub_cmd_vel.publish(cmd)
-                self.get_logger().info ("VIRANDO")
-
-                if(yaw >= pi/4):
-                    cmd.angular.z = 0.00
-                    self.pub_cmd_vel.publish(cmd)
-                    self.estado_robo = 1 #estado 1 = andar para de frente
-                    self.get_logger().info ("PAROU DE VIRAR")
-
-            elif(self.estado_robo == 1):
-                if (self.distancia_frente >= self.d):
-                    cmd.linear.x = 0.5
-                    self.pub_cmd_vel.publish(cmd)
-                    self.get_logger().info ("INDO PARA FRENTE")
-                    if(self.d == 0):
-                        cmd.linear.x = 0.0
-                        self.pub_cmd_vel.publish(cmd)
-                        self.get_logger().info ("OBJETIVO ALCANCADO")
-                else:
-                    self.estado_robo = 2
             
-            elif(self.estado_robo == 2):
-                cmd.angular.z = 0.1
-                self.pub_cmd_vel.publish(cmd)
-                if(self.distancia_frente > self.distancia_direita and self.distancia_frente > self.distancia_esquerda):
+            cmd = Twist()
+            self.distancia_robo_obj()
+            self.erro_ang = self.angulo_robo - yaw
+            
+            
+
+            if self.estado_robo == 0:
+                if(abs(self.erro_ang) >= 0.06):
+                    cmd.angular.z = 0.4
+                    self.pub_cmd_vel.publish(cmd)
+                    self.get_logger().info ('TENTANDO VIRAR PRO (9,9)')
+                elif( self.dist <= 3 and abs(self.erro_ang) <= 0.06):
+                    self.estado_robo = 2                
+                else:
                     cmd.angular.z = 0.0
                     self.pub_cmd_vel.publish(cmd)
+                    self.get_logger().info ('olhando para (9,9), dist=' + str(self.dist) + 'dr2d2=' + str(self.pose.position.x)+ str(self.pose.position.y))
+                    self.estado_robo = 1
+        
+            elif self.estado_robo == 1: #sem obstaculos
+                self.get_logger().info ('estado = 1')
+                if(self.distancia_frente > self.distancia_direita and self.distancia_frente > self.distancia_esquerda and self.distancia_frente > 1):
+                    self.get_logger().info ('frente livre')
+                    self.estado_robo = 2
+                elif(self.distancia_esquerda > self.distancia_direita and self.distancia_esquerda > self.distancia_frente ):
+                    cmd.angular.z = 0.5
+                    self.get_logger().info ('frente não é a mais livre ainda, virando para esquerda')
+                    self.pub_cmd_vel.publish(cmd)
+                elif(self.distancia_direita > self.distancia_frente and self.distancia_direita > self.distancia_esquerda ):
+                    cmd.angular.z = -0.5
+                    self.get_logger().info ('frente não é a mais livre ainda, virando para direita')
+                    self.pub_cmd_vel.publish(cmd)
+                else:
+                    cmd.angular.z = 0.5
+                    self.pub_cmd_vel.publish(cmd)
+                    self.get_logger().info ('ROBO GIRANDO ENQUANTO PROCURA UMA SAIDA')
 
+            elif self.estado_robo == 2: #com obstaculos
+                    self.get_logger().info ('estado = 2, andando')
+                    cmd.linear.x = 0.5
+                    self.pub_cmd_vel.publish(cmd)
+                    self.get_logger().debug ("Distância para o obstáculo" + str(self.distancia_frente))
+                
+                    if(self.dist <= 3 and self.dist >=1 and abs(self.erro_ang) <= 0.06):
+                        cmd.linear.x = 0.5
+                        self.pub_cmd_vel.publish(cmd)
+                        self.get_logger().info ('INDO PARA (9,9)')
+                    elif (self.distancia_frente < self.distancia_direita and self.distancia_frente < self.distancia_esquerda or self.distancia_frente < 1):
+                        self.get_logger().info ('frente com obstaculos')
+                        self.estado_robo = 0
+                    if(self.dist <= 0.8):
+                        cmd.angular.z = 0.0
+                        cmd.linear.x = 0.0
+                        self.pub_cmd_vel.publish(cmd)
+                        self.get_logger().info ('CHEGOU NO (9,9)')
 
-
-            self.get_logger().debug ("Distância para o obstáculo" + str(self.distancia_frente))
                 
                   
         self.get_logger().info ('Ordenando o robô: "parar"')
