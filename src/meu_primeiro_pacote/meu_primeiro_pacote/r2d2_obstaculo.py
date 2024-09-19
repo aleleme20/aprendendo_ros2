@@ -96,7 +96,8 @@ class R2D2(Node):
                     self.pub_cmd_vel.publish(cmd)
                     self.get_logger().info ('TENTANDO VIRAR PRO (9,9)')
                 elif( self.dist <= 3 and abs(self.erro_ang) <= 0.06):
-                    self.estado_robo = 2                
+                    self.estado_robo = 2       
+                             
                 else:
                     cmd.angular.z = 0.0
                     self.pub_cmd_vel.publish(cmd)
@@ -121,7 +122,7 @@ class R2D2(Node):
                     self.pub_cmd_vel.publish(cmd)
                     self.get_logger().info ('ROBO GIRANDO ENQUANTO PROCURA UMA SAIDA')
 
-            elif self.estado_robo == 2: #com obstaculos
+            elif self.estado_robo == 2: #andando
                     self.get_logger().info ('estado = 2, andando')
                     cmd.linear.x = 0.5
                     self.pub_cmd_vel.publish(cmd)
