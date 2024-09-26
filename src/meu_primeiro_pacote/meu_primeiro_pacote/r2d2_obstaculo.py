@@ -95,7 +95,7 @@ class R2D2(Node):
                     cmd.angular.z = 0.4
                     self.pub_cmd_vel.publish(cmd)
                     self.get_logger().info ('TENTANDO VIRAR PRO (9,9)')
-                elif( self.dist <= 3 and abs(self.erro_ang) <= 0.06):
+                elif(self.dist <= 3 and abs(self.erro_ang) <= 0.06):
                     self.estado_robo = 2       
                              
                 else:
@@ -104,7 +104,7 @@ class R2D2(Node):
                     self.get_logger().info ('olhando para (9,9), dist=' + str(self.dist) + 'dr2d2=' + str(self.pose.position.x)+ str(self.pose.position.y))
                     self.estado_robo = 1
         
-            elif self.estado_robo == 1: #sem obstaculos
+            elif self.estado_robo == 1: 
                 self.get_logger().info ('estado = 1')
                 if(self.distancia_frente > self.distancia_direita and self.distancia_frente > self.distancia_esquerda and self.distancia_frente > 1):
                     self.get_logger().info ('frente livre')
