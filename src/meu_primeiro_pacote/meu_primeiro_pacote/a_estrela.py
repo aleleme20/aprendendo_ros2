@@ -57,12 +57,14 @@ def verifica_vizinhos(node, matrix):
         new_x = x + move[0]
         new_y = y + move[1]
 
-        #verifica se ta dentro dos limites da matriz e se nao é um obstaculo
-        if 0 <= new_x < len(matrix) and 0 <= new_y < len(matrix[0]) and matrix[new_x][new_y] == 1:
-            new_node = [new_x, new_y, 0, 0, 0, node]  # Cria um novo nó com parent
-            vizinhos.append(new_node)
+        if 0 <= new_x < len(matrix) and 0 <= new_y < len(matrix[0]):
+            print(f"Verificando ({new_x}, {new_y}) -> Valor no mapa: {matrix[new_x][new_y]}")
+            
+            if matrix[new_x][new_y] == 1:
+                new_node = [new_x, new_y, 0, 0, 0, node]  
+                vizinhos.append(new_node)
 
-    print(f"Vizinhos de ({x}, {y}): {vizinhos}")
+    print(f"Vizinhos de ({x}, {y}): {vizinhos}") #ESTÁ PRINTANDO UMA LISTA VAZIA???
     return vizinhos
 
 #loop principal do A*:
@@ -121,12 +123,12 @@ plt.imshow(matrix, interpolation='nearest', cmap='gray')
 
 print("Caminho:", caminho)
 
-caminho_x = [coord[0] for coord in caminho]  # Lista de coordenadas x do caminho (colunas)
-caminho_y = [coord[1] for coord in caminho]  # Lista de coordenadas y do caminho (linhas)
+caminho_x = [coord[0] for coord in caminho] 
+caminho_y = [coord[1] for coord in caminho]  
 
-plt.plot(caminho_x, caminho_y, marker='o', color='r', linewidth=2)  # Linha vermelha com círculos nos pontos
-plt.scatter(x_inicio, y_inicio, color='blue', label='Início')  # Inverter para o ponto inicial
-plt.scatter(x_final, y_final, color='green', label='Final')    # Inverter para o ponto final
+plt.plot(caminho_x, caminho_y, marker='o', color='r', linewidth=2)  
+plt.scatter(x_inicio, y_inicio, color='blue', label='Início')  
+plt.scatter(x_final, y_final, color='green', label='Final')   
 
 plt.legend()
 plt.show()
