@@ -28,6 +28,6 @@ while fila:
                 fila.append((ny, nx))  # add a celula na fila
 
 
-plt.imshow(matrix, interpolation='nearest', cmap='viridis')
-plt.colorbar() #deixa o mapa colorido
+plt.imshow(matrix, interpolation='nearest', cmap='gray')
+#plt.colorbar() #deixa o mapa colorido
 plt.show()

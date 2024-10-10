@@ -1,13 +1,15 @@
 import math
+import numpy as np
 from matplotlib import pyplot as plt
 
 pgmf = open('src/my_map.pgm', 'rb')
 matrix = plt.imread(pgmf)
-print (matrix)
+#print (matrix)
 
 matrix = 1.0 * (matrix > 250)
+print (matrix)
 plt.imshow(matrix, interpolation='nearest', cmap='gray')
-plt.show()
+#plt.show()
 
 x_inicio = 650
 y_inicio = 400
@@ -60,6 +62,7 @@ def verifica_vizinhos(node, matrix):
             new_node = [new_x, new_y, 0, 0, 0, node]  # Cria um novo nó com parent
             vizinhos.append(new_node)
 
+    print(f"Vizinhos de ({x}, {y}): {vizinhos}")
     return vizinhos
 
 #loop principal do A*:
@@ -67,15 +70,14 @@ while len(open_list) > 0:
     # nó com o menor valor de 'f' da open list
     current_node = encontra_menor_f(open_list)
     
-    
+    caminho = []
     if current_node[0] == x_final and current_node[1] == y_final:
-        print("Objetivo alcançado!")
-        caminho = []
+        #caminho = []
+        print("Nó final encontrado!")
         while current_node is not None:
             caminho.append([current_node[0], current_node[1]])
             current_node = current_node[5]  # caminho de volta pelo nó pai
         caminho.reverse()  # inverte o caminho para ficar do início ao fim
-        print("Caminho:", caminho)
         break
     
     # mover o nó atual da open list para a closed list
@@ -113,16 +115,18 @@ while len(open_list) > 0:
             # se o vizinho não está na lista aberta, adiciona
             open_list.append(vizinho)
 
-
+    
 
 plt.imshow(matrix, interpolation='nearest', cmap='gray')
 
-caminho_x = [coord[1] for coord in caminho]  # Lista de coordenadas x do caminho
-caminho_y = [coord[0] for coord in caminho]  # Lista de coordenadas y do caminho
+print("Caminho:", caminho)
+
+caminho_x = [coord[0] for coord in caminho]  # Lista de coordenadas x do caminho (colunas)
+caminho_y = [coord[1] for coord in caminho]  # Lista de coordenadas y do caminho (linhas)
 
 plt.plot(caminho_x, caminho_y, marker='o', color='r', linewidth=2)  # Linha vermelha com círculos nos pontos
-plt.scatter(y_inicio, x_inicio, color='blue', label='Início')  # Marca o ponto inicial em azul
-plt.scatter(y_final, x_final, color='green', label='Final')  # Marca o ponto final em verde
+plt.scatter(x_inicio, y_inicio, color='blue', label='Início')  # Inverter para o ponto inicial
+plt.scatter(x_final, y_final, color='green', label='Final')    # Inverter para o ponto final
 
 plt.legend()
 plt.show()
