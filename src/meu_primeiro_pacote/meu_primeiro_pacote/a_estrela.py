@@ -1,159 +1,146 @@
-import math
+import cv2
 import numpy as np
 from matplotlib import pyplot as plt
+import math
+from math import *
+from matplotlib.colors import Normalize
 
-# Carregar o mapa
-pgmf = open('src/my_map.pgm', 'rb')
-matrix = plt.imread(pgmf)
+pgmf = open('my_map.pgm', 'rb')
+image = plt.imread(pgmf)
 
-# Transformar a imagem do mapa em matriz binária (obstáculos = 0, livre = 1)
-matrix = 1.0 * (matrix > 250)
-print(f"Dimensões da matriz: {matrix.shape}")
+image_copia = 1.0 * (image > 250)
 
-# Ponto inicial e final
-x_inicio = 650
-y_inicio = 400
-x_final = 833
-y_final = 85
+goal = (80, 325) 
+robo = (300, 25) 
 
-print(f"Valor do ponto inicial: {matrix[y_inicio][x_inicio]}")
-print(f"Valor do ponto final: {matrix[y_final][x_final]}")
+image_copia[goal[0]][goal[1]] = 0 
+image_copia[robo[0]][robo[1]] = 0   
 
-# Função para cálculo da heurística (distância euclidiana)
-def calcula_h(node, end):
-    return math.sqrt((node[0] - end[0])**2 + (node[1] - end[1])**2)
+fig = plt.figure()
+fig.canvas.manager.set_window_title('Figura 1')
 
-# nó = lista [x, y, g, h, f, parent]
-start_node = [x_inicio, y_inicio, 0, 0, 0, None]
-end_node = [x_final, y_final, 0, 0, 0, None]
+plt.imshow(image_copia, interpolation='nearest', cmap='gray')
+plt.title('Imagem inicial')
+plt.show()
 
-g = 0
-h = calcula_h(start_node, end_node)
-f = g + h
-
-# Atualiza o nó inicial
-start_node[2] = g
-start_node[3] = h
-start_node[4] = f
-
-open_list = []  # nós a serem explorados
-closed_list = []  # nós já explorados
-
-open_list.append(start_node)
-
-# Função para encontrar o nó com menor f na open list
-def encontra_menor_f(open_list):
-    menor_f = open_list[0]
-    for node in open_list:
-        if node[4] < menor_f[4]:  # compara valor de f (ind.4)
-            menor_f = node
-    return menor_f
-
-# Função para verificar vizinhos
-def verifica_vizinhos(node, matrix):
-    vizinhos = []
-    x, y = node[0], node[1]
-
-    movimentos = [(0, 1), (0, -1), (1, 0), (-1, 0),  # Lateral e vertical
-                  (1, 1), (1, -1), (-1, 1), (-1, -1)]  # Diagonais
-
-    for move in movimentos:
-        new_x = x + move[0]
-        new_y = y + move[1]
-
-        # Verificar se o vizinho está dentro dos limites da matriz
-        if 0 <= new_x < matrix.shape[1] and 0 <= new_y < matrix.shape[0]:
-            # Verificar se o vizinho é transitável
-            if matrix[new_y][new_x] == 1:
-                new_node = [new_x, new_y, 0, 0, 0, node]
-                vizinhos.append(new_node)
-        else:
-            print(f"Coordenada fora dos limites: ({new_x}, {new_y})")
-
-    print(f"Vizinhos de ({x}, {y}): {vizinhos}")
-    return vizinhos
-
-# Loop principal do A*:
-caminho = []
-iteration = 0  # Adicionando contador de iterações para depuração
-
-while len(open_list) > 0:
-    iteration += 1
-    print(f"Iteração: {iteration}")
+def indice_menor_valor(lista_f, lista_c):
+    if not lista_f or not lista_c :
+        return 
     
-    # Encontrar o nó com menor valor de f na open list
-    current_node = encontra_menor_f(open_list)
-    
-    print(f"Analisando nó: {current_node}")
+    lista_f = np.array(lista_f)
+    lista_c = np.array(lista_c)
 
-    # Verificar se alcançamos o nó final
-    if current_node[0] == x_final and current_node[1] == y_final:
-        print("Nó final encontrado!")
-        while current_node is not None:
-            caminho.append([current_node[0], current_node[1]])
-            current_node = current_node[5]  # Caminho de volta pelo nó pai
-        caminho.reverse()  # Inverte o caminho para ficar do início ao fim
-        break
-    
-    # Remover o nó atual da open list e adicionar à closed list
-    open_list.remove(current_node)
-    closed_list.append(current_node)
-    
-    # Expandir os vizinhos do nó atual
-    vizinhos = verifica_vizinhos(current_node, matrix)
+    lista_ind = np.where(lista_f == min(lista_f))
+    lista_ind = lista_ind[0]
 
-    # Caso não haja vizinhos transitáveis, evitar o loop infinito
-    if not vizinhos:
-        print(f"Nenhum vizinho transitável encontrado para o nó: {current_node}")
+    h_min = math.dist(lista_c[lista_ind[0]], goal)
+
+    menor_indice = lista_ind[0]
+
+    for i in lista_ind:
+        h = math.dist(lista_c[i], goal)
+        if (h < h_min):
+            h_min = h
+            menor_indice = i
+
+    return menor_indice
+
+#algoritmo de busca pelo ponto
+image_copia[goal[0]][goal[1]] = 2 #objetivo é 2
+image_copia[robo[0]][robo[1]] = 1 #robo é 1
+
+menor_h = 1000
+ponto = robo
+parar = False
+coordenadas = list()
+caminho_f = list ()
+
+while(1):
+    for l in range (-1,2):
+        for c in range (-1,2):
+            try:
+                if(image_copia[ponto[0]+l][ponto[1]+c] == 1):
+                    g = math.dist(robo, (ponto[0]+l,ponto[1]+c))
+                    h = math.dist((ponto[0]+l,ponto[1]+c), goal)
+                    f = g + h
+
+                    image_copia[ponto[0]+ l][ponto[1]+c]= f
+                    caminho_f.append(f)
+                    coordenadas.append([ponto[0]+ l, ponto[1]+c])
+
+                if(ponto[0]+l == goal[0] and ponto[1]+c == goal[1]):
+                    parar = True
+                    break
+            except: 
+                continue
+        if(parar == True):
+            break   
+    if(parar == True):
+           break   
+    
+    menor_ind = indice_menor_valor(caminho_f, coordenadas)
+    if menor_ind is None:
+        print("Erro: não foi encontrado um índice válido para continuar.")
         continue
+    else:
+        ponto = coordenadas.pop(menor_ind)
+        caminho_f.pop(menor_ind)
+
+
+fig = plt.figure()
+fig.canvas.manager.set_window_title('Figura 2')
+
+norm = Normalize(vmin=371, vmax=373)
+cmap= plt.get_cmap('viridis')
+
+plt.imshow(image_copia, interpolation='nearest', cmap='viridis', norm=norm)  # Usando viridis para ver os valores
+plt.colorbar()
+plt.title('Imagem colorida de proximidade')
+plt.show()
+
+#algoritmo de encontrar o caminho certo
+ponto_inicial = robo
+caminho = [robo]
+menor = image_copia[robo[0]][robo[1]] + 2
+menor_posicao = robo
+parar = False
+listafechada = list()
+
+while(1):
+    for l in range (1,-2,-1):
+        for c in range (1,-2,-1):
+            try:          
+                if(image_copia[ponto_inicial[0]+l][ponto_inicial[1]+c] > 1 and image_copia[ponto_inicial[0]+l][ponto_inicial[1]+c] < menor and ([ponto_inicial[0]+l],[ponto_inicial[1]+c]) not in listafechada and (([ponto_inicial[0]+l],[ponto_inicial[1]+c]) != ([ponto_inicial[0]], [ponto_inicial[1]]))):
+                    menor = image_copia[ponto_inicial[0]+l][ponto_inicial[1]+c]
+                    menor_posicao = (ponto_inicial[0]+l, ponto_inicial[1]+c)
+
+                if(ponto_inicial[0]+l == goal[0] and ponto_inicial[1]+c == goal[1]):
+                    parar = True
+                    break
+
+                listafechada.append(([ponto_inicial[0]+l],[ponto_inicial[1]+c]))
+            except: 
+                continue
+
+        if(parar == True):
+            break 
+
+    ponto_inicial = menor_posicao
+    caminho.append(menor_posicao)
+    menor = menor + 2
+
+    if(parar == True):
+        break 
     
-    for vizinho in vizinhos:
-        # Se o vizinho já está na lista fechada, ignora
-        if any(v[0] == vizinho[0] and v[1] == vizinho[1] for v in closed_list):
-            continue
+#colorindo caminho :)
 
-        # Calcular o custo g (movimento lateral/vertical = 1, diagonal = sqrt(2))
-        movimento_diagonal = abs(vizinho[0] - current_node[0]) == 1 and abs(vizinho[1] - current_node[1]) == 1
-        if movimento_diagonal:
-            vizinho[2] = current_node[2] + math.sqrt(2)
-        else:
-            vizinho[2] = current_node[2] + 1
+image_com_caminho = image.copy()
+image_com_caminho = cv2.cvtColor(image_com_caminho, cv2.COLOR_GRAY2RGB)
 
-        # Calcular h e f
-        vizinho[3] = calcula_h(vizinho, end_node)
-        vizinho[4] = vizinho[2] + vizinho[3]
+for i in caminho:
 
-        # Verificar se o vizinho já está na open list
-        vizinho_aberto = next((v for v in open_list if v[0] == vizinho[0] and v[1] == vizinho[1]), None)
-        if vizinho_aberto:
-            # Se o novo caminho for melhor, atualiza os valores e o nó pai
-            if vizinho[2] < vizinho_aberto[2]:
-                vizinho_aberto[2] = vizinho[2]
-                vizinho_aberto[3] = vizinho[3]
-                vizinho_aberto[4] = vizinho[4]
-                vizinho_aberto[5] = current_node
-        else:
-            # Se o vizinho não está na open list, adiciona
-            open_list.append(vizinho)
+    image_com_caminho[i[0]][i[1]] = [254, 0, 0]
 
-    # Garantir que o nó está progredindo
-    if current_node in open_list:
-        print(f"Erro: o nó {current_node} não foi removido corretamente da open_list!")
-
-# Exibir o mapa e o caminho
-plt.imshow(matrix, interpolation='nearest', cmap='gray')
-
-print("Caminho:", caminho)
-
-if caminho:
-    caminho_x = [coord[0] for coord in caminho] 
-    caminho_y = [coord[1] for coord in caminho]  
-
-    plt.plot(caminho_x, caminho_y, marker='o', color='r', linewidth=2)  
-    plt.scatter(x_inicio, y_inicio, color='blue', label='Início')  
-    plt.scatter(x_final, y_final, color='green', label='Final')   
-
-    plt.legend()
-    plt.show()
-else:
-    print("Nenhum caminho encontrado.")
+plt.imshow(image_com_caminho)
+plt.title('Imagem com caminho')
+plt.show()
