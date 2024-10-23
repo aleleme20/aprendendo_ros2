@@ -5,7 +5,7 @@ import math
 from math import *
 from matplotlib.colors import Normalize
 
-pgmf = open('my_map.pgm', 'rb')
+pgmf = open('src/meu_primeiro_pacote/meu_primeiro_pacote/my_map.pgm', 'rb')
 matrix = plt.imread(pgmf)
 
 matrix_copia = 1.0 * (matrix > 250)
@@ -15,13 +15,6 @@ inicio = (359, 36)
 
 matrix_copia[final[0]][final[1]] = 0 
 matrix_copia[inicio[0]][inicio[1]] = 0   
-
-#fig = plt.figure()
-#fig.canvas.manager.set_window_title('Figura 1')
-
-#plt.imshow(matrix_copia, interpolation='nearest', cmap='gray')
-#plt.title('Imagem inicial')
-#plt.show()
 
 def indice_menor_valor(lista_f, lista_c):
     if not lista_f or not lista_c :
@@ -45,9 +38,8 @@ def indice_menor_valor(lista_f, lista_c):
 
     return menor_indice
 
-#algoritmo de busca pelo ponto
-matrix_copia[final[0]][final[1]] = 2 #objetivo é 2
-matrix_copia[inicio[0]][inicio[1]] = 1 #inicio é 1
+matrix_copia[final[0]][final[1]] = 2 
+matrix_copia[inicio[0]][inicio[1]] = 1 
 
 menor_h = 1000
 ponto = inicio
@@ -87,18 +79,6 @@ while(1):
         caminho_f.pop(menor_ind)
 
 
-#fig = plt.figure()
-#fig.canvas.manager.set_window_title('Figura 2')
-
-#norm = Normalize(vmin=371, vmax=373)
-#cmap= plt.get_cmap('viridis')
-
-#plt.imshow(matrix_copia, interpolation='nearest', cmap='viridis')  # Usando viridis para ver os valores
-#plt.colorbar()
-#plt.title('Imagem colorida de proximidade')
-#plt.show()
-
-#algoritmo de encontrar o caminho certo
 ponto_inicial = inicio
 caminho = [inicio]
 menor = matrix_copia[inicio[0]][inicio[1]] + 2
@@ -142,5 +122,5 @@ for i in caminho:
     imagem_caminho[i[0]][i[1]] = [254, 0, 0]
 
 plt.imshow(imagem_caminho)
-plt.title('Imagem com caminho')
+plt.title('Caminho calculado')
 plt.show()
