@@ -6,22 +6,22 @@ from math import *
 from matplotlib.colors import Normalize
 
 pgmf = open('my_map.pgm', 'rb')
-image = plt.imread(pgmf)
+matrix = plt.imread(pgmf)
 
-image_copia = 1.0 * (image > 250)
+matrix_copia = 1.0 * (matrix > 250)
 
-goal = (80, 325) 
-robo = (300, 25) 
+final = (35, 373) 
+inicio = (359, 36) 
 
-image_copia[goal[0]][goal[1]] = 0 
-image_copia[robo[0]][robo[1]] = 0   
+matrix_copia[final[0]][final[1]] = 0 
+matrix_copia[inicio[0]][inicio[1]] = 0   
 
-fig = plt.figure()
-fig.canvas.manager.set_window_title('Figura 1')
+#fig = plt.figure()
+#fig.canvas.manager.set_window_title('Figura 1')
 
-plt.imshow(image_copia, interpolation='nearest', cmap='gray')
-plt.title('Imagem inicial')
-plt.show()
+#plt.imshow(matrix_copia, interpolation='nearest', cmap='gray')
+#plt.title('Imagem inicial')
+#plt.show()
 
 def indice_menor_valor(lista_f, lista_c):
     if not lista_f or not lista_c :
@@ -33,12 +33,12 @@ def indice_menor_valor(lista_f, lista_c):
     lista_ind = np.where(lista_f == min(lista_f))
     lista_ind = lista_ind[0]
 
-    h_min = math.dist(lista_c[lista_ind[0]], goal)
+    h_min = math.dist(lista_c[lista_ind[0]], final)
 
     menor_indice = lista_ind[0]
 
     for i in lista_ind:
-        h = math.dist(lista_c[i], goal)
+        h = math.dist(lista_c[i], final)
         if (h < h_min):
             h_min = h
             menor_indice = i
@@ -46,11 +46,11 @@ def indice_menor_valor(lista_f, lista_c):
     return menor_indice
 
 #algoritmo de busca pelo ponto
-image_copia[goal[0]][goal[1]] = 2 #objetivo é 2
-image_copia[robo[0]][robo[1]] = 1 #robo é 1
+matrix_copia[final[0]][final[1]] = 2 #objetivo é 2
+matrix_copia[inicio[0]][inicio[1]] = 1 #inicio é 1
 
 menor_h = 1000
-ponto = robo
+ponto = inicio
 parar = False
 coordenadas = list()
 caminho_f = list ()
@@ -59,16 +59,16 @@ while(1):
     for l in range (-1,2):
         for c in range (-1,2):
             try:
-                if(image_copia[ponto[0]+l][ponto[1]+c] == 1):
-                    g = math.dist(robo, (ponto[0]+l,ponto[1]+c))
-                    h = math.dist((ponto[0]+l,ponto[1]+c), goal)
+                if(matrix_copia[ponto[0]+l][ponto[1]+c] == 1):
+                    g = math.dist(inicio, (ponto[0]+l,ponto[1]+c))
+                    h = math.dist((ponto[0]+l,ponto[1]+c), final)
                     f = g + h
 
-                    image_copia[ponto[0]+ l][ponto[1]+c]= f
+                    matrix_copia[ponto[0]+ l][ponto[1]+c]= f
                     caminho_f.append(f)
                     coordenadas.append([ponto[0]+ l, ponto[1]+c])
 
-                if(ponto[0]+l == goal[0] and ponto[1]+c == goal[1]):
+                if(ponto[0]+l == final[0] and ponto[1]+c == final[1]):
                     parar = True
                     break
             except: 
@@ -87,22 +87,22 @@ while(1):
         caminho_f.pop(menor_ind)
 
 
-fig = plt.figure()
-fig.canvas.manager.set_window_title('Figura 2')
+#fig = plt.figure()
+#fig.canvas.manager.set_window_title('Figura 2')
 
-norm = Normalize(vmin=371, vmax=373)
-cmap= plt.get_cmap('viridis')
+#norm = Normalize(vmin=371, vmax=373)
+#cmap= plt.get_cmap('viridis')
 
-plt.imshow(image_copia, interpolation='nearest', cmap='viridis', norm=norm)  # Usando viridis para ver os valores
-plt.colorbar()
-plt.title('Imagem colorida de proximidade')
-plt.show()
+#plt.imshow(matrix_copia, interpolation='nearest', cmap='viridis')  # Usando viridis para ver os valores
+#plt.colorbar()
+#plt.title('Imagem colorida de proximidade')
+#plt.show()
 
 #algoritmo de encontrar o caminho certo
-ponto_inicial = robo
-caminho = [robo]
-menor = image_copia[robo[0]][robo[1]] + 2
-menor_posicao = robo
+ponto_inicial = inicio
+caminho = [inicio]
+menor = matrix_copia[inicio[0]][inicio[1]] + 2
+menor_posicao = inicio
 parar = False
 listafechada = list()
 
@@ -110,11 +110,11 @@ while(1):
     for l in range (1,-2,-1):
         for c in range (1,-2,-1):
             try:          
-                if(image_copia[ponto_inicial[0]+l][ponto_inicial[1]+c] > 1 and image_copia[ponto_inicial[0]+l][ponto_inicial[1]+c] < menor and ([ponto_inicial[0]+l],[ponto_inicial[1]+c]) not in listafechada and (([ponto_inicial[0]+l],[ponto_inicial[1]+c]) != ([ponto_inicial[0]], [ponto_inicial[1]]))):
-                    menor = image_copia[ponto_inicial[0]+l][ponto_inicial[1]+c]
+                if(matrix_copia[ponto_inicial[0]+l][ponto_inicial[1]+c] > 1 and matrix_copia[ponto_inicial[0]+l][ponto_inicial[1]+c] < menor and ([ponto_inicial[0]+l],[ponto_inicial[1]+c]) not in listafechada and (([ponto_inicial[0]+l],[ponto_inicial[1]+c]) != ([ponto_inicial[0]], [ponto_inicial[1]]))):
+                    menor = matrix_copia[ponto_inicial[0]+l][ponto_inicial[1]+c]
                     menor_posicao = (ponto_inicial[0]+l, ponto_inicial[1]+c)
 
-                if(ponto_inicial[0]+l == goal[0] and ponto_inicial[1]+c == goal[1]):
+                if(ponto_inicial[0]+l == final[0] and ponto_inicial[1]+c == final[1]):
                     parar = True
                     break
 
@@ -134,13 +134,13 @@ while(1):
     
 #colorindo caminho :)
 
-image_com_caminho = image.copy()
-image_com_caminho = cv2.cvtColor(image_com_caminho, cv2.COLOR_GRAY2RGB)
+imagem_caminho = matrix.copy()
+imagem_caminho = cv2.cvtColor(imagem_caminho, cv2.COLOR_GRAY2RGB)
 
 for i in caminho:
 
-    image_com_caminho[i[0]][i[1]] = [254, 0, 0]
+    imagem_caminho[i[0]][i[1]] = [254, 0, 0]
 
-plt.imshow(image_com_caminho)
+plt.imshow(imagem_caminho)
 plt.title('Imagem com caminho')
 plt.show()
