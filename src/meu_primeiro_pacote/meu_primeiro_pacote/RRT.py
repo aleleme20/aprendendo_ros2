@@ -9,20 +9,14 @@ import random
 pgmf = open('src/meu_primeiro_pacote/meu_primeiro_pacote/my_map.pgm', 'rb')
 matrix = plt.imread(pgmf)
 
-matrix_copia = 1.0 * (image > 250)
+matrix_copia = 1.0 * (matrix > 250)
 
 inicio = (300, 25) 
-final = (80, 325)  
+#final = (17, 320)
+final = (19, 298) 
 
 matrix_copia[final[0]][final[1]] = 0 
 matrix_copia[inicio[0]][inicio[1]] = 0   
-
-fig = plt.figure()
-fig.canvas.manager.set_window_title('Figura 1')
-
-plt.imshow(matrix_copia, interpolation='nearest', cmap='gray')
-plt.title('Imagem inicial')
-plt.show()
 
 #algoritmo
 f_crescimento = 10
@@ -67,25 +61,15 @@ for i in range(max_interacoes):
         filhos.append(novo_no)
 
         if math.dist(novo_no, final) < f_crescimento:
-            print("CHEGOOOOOU")
+            print("chegou")
             break
 
-
-#Mapa em escala de cinza
 matrix_copia = cv2.cvtColor(matrix.copy(), cv2.COLOR_GRAY2RGB)
 
-#Função pra colorir as linhas entre um no e outro da arvore
+
 for (ponto1, ponto2) in caminho:
-    cv2.line(matrix_copia, ponto1[::-1], ponto2[::-1], (0, 0, 255), 1) #esse ponto[::-1] serve pra trocar x e y do lugar pq no openCV é ao contrario
+    cv2.line(matrix_copia, ponto1[::-1], ponto2[::-1], (0, 0, 255), 1)
 
-fig = plt.figure()
-fig.canvas.manager.set_window_title('Figura 2')
-
-plt.imshow(matrix_copia)
-plt.title('Caminho gerado pelo RRT')
-plt.show()
-
-#colorindo o camnho :)
 caminho_correto = []
 filho = no_mais_proximo
 pai = novo_no
@@ -98,14 +82,9 @@ while(1):
     if(filho == inicio):
         break
 
-
-#Função pra colorir o caminho
 for (ponto1, ponto2) in caminho_correto:
-    cv2.line(matrix_copia, ponto1[::-1], ponto2[::-1], (255, 0, 0), 1) #esse ponto[::-1] serve pra trocar x e y do lugar pq no openCV é ao contrario
-
-fig = plt.figure()
-fig.canvas.manager.set_window_title('Figura 3')
+    cv2.line(matrix_copia, ponto1[::-1], ponto2[::-1], (255, 0, 0), 1) 
 
 plt.imshow(matrix_copia)
-plt.title('Caminho do robô ate o objetivo')
+plt.title('Caminho calculado usando RRT')
 plt.show()
