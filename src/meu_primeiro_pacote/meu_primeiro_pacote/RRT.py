@@ -12,7 +12,6 @@ matrix = plt.imread(pgmf)
 matrix_copia = 1.0 * (matrix > 250)
 
 inicio = (300, 25) 
-#final = (17, 320)
 final = (19, 298) 
 
 matrix_copia[final[0]][final[1]] = 0 
