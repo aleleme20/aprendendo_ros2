@@ -82,7 +82,7 @@ while(1):
         break
 
 for (ponto1, ponto2) in caminho_correto:
-    cv2.line(matrix_copia, ponto1[::-1], ponto2[::-1], (255, 0, 0), 1) 
+    cv2.line(matrix_copia, ponto1[::-1], ponto2[::-1], (255, 150, 0), 1) 
 
 plt.imshow(matrix_copia)
 plt.title('Caminho calculado usando RRT')
